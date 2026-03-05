@@ -899,12 +899,14 @@ async function initFFmpeg() {
     engineDot.className = 'dot loading';
     engineLabel.textContent = 'Loading engine…';
 
-    // Single-thread core: no SharedArrayBuffer / COOP / COEP / workerURL needed
-    // Works on any custom domain without special server headers
-    const base = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
+    // All URLs converted to same-origin blob URLs so the browser never
+    // tries to construct a cross-origin Worker — fixes custom domain hosting.
+    const base   = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
+    const ffBase = 'https://unpkg.com/@ffmpeg/ffmpeg@0.12.6/dist/umd';
     await ffmpeg.load({
-      coreURL: await toBlobURL(`${base}/ffmpeg-core.js`,   'text/javascript'),
-      wasmURL: await toBlobURL(`${base}/ffmpeg-core.wasm`, 'application/wasm'),
+      coreURL:   await toBlobURL(`${base}/ffmpeg-core.js`,   'text/javascript'),
+      wasmURL:   await toBlobURL(`${base}/ffmpeg-core.wasm`, 'application/wasm'),
+      workerURL: await toBlobURL(`${ffBase}/814.ffmpeg.js`,  'text/javascript'),
     });
 
     ffmpegReady = true;
