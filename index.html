@@ -5,10 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CutLab — Video Segment Extractor</title>
 
-<!-- COI Service Worker: enables SharedArrayBuffer on GitHub Pages (HTTPS) -->
-<script src="https://unpkg.com/coi-serviceworker@0.1.9/coi-serviceworker.min.js"></script>
-
-<!-- FFmpeg.wasm v0.12 -->
+<!-- FFmpeg.wasm v0.12 — single-thread core (no SharedArrayBuffer required) -->
 <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.6/dist/umd/ffmpeg.js"></script>
 <script src="https://unpkg.com/@ffmpeg/util@0.12.1/dist/umd/index.js"></script>
 
@@ -902,10 +899,13 @@ async function initFFmpeg() {
     engineDot.className = 'dot loading';
     engineLabel.textContent = 'Loading engine…';
 
+    // Single-thread core: no SharedArrayBuffer / COOP / COEP needed
+    // Works on any custom domain without special server headers
     const base = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
     await ffmpeg.load({
-      coreURL: await toBlobURL(`${base}/ffmpeg-core.js`,   'text/javascript'),
-      wasmURL: await toBlobURL(`${base}/ffmpeg-core.wasm`, 'application/wasm'),
+      coreURL:   await toBlobURL(`${base}/ffmpeg-core.js`,   'text/javascript'),
+      wasmURL:   await toBlobURL(`${base}/ffmpeg-core.wasm`, 'application/wasm'),
+      workerURL: await toBlobURL(`${base}/ffmpeg-core.worker.js`, 'text/javascript'),
     });
 
     ffmpegReady = true;
@@ -917,7 +917,7 @@ async function initFFmpeg() {
     engineLabel.textContent = 'Engine failed';
     overlay.innerHTML = `<div style="color:var(--red);font-family:var(--mono);font-size:0.85rem;padding:24px;text-align:center">
       ⚠️ FFmpeg failed to load.<br><br>
-      <small>This app requires HTTPS or localhost.<br>Please ensure it's served from GitHub Pages or a local server.</small><br><br>
+      <small>This app requires HTTPS or localhost.<br>Check your browser console for details.</small><br><br>
       <button onclick="location.reload()" style="margin-top:12px;padding:8px 20px;background:var(--accent);color:#000;border:none;border-radius:6px;cursor:pointer;font-weight:700">Retry</button>
     </div>`;
     console.error(e);
